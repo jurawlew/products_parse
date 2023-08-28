@@ -1,4 +1,3 @@
-import pandas
 from django.shortcuts import render
 
 from clickhouse_driver import Client
@@ -18,12 +17,16 @@ def products_parse(request):
                             password='',
                             port='9000')
 
-            attrs_ca = client.execute("SELECT ca.attribute_id, ca.attribute_name, ca.description, ca.required, "
-                                      "ca.dictionary_value, ca.data_type, pa.value FROM categories c "
-                                      "JOIN category_attrs ca ON c.category_id=ca.category_id "
-                                      "LEFT JOIN product_attr pa ON ca.attribute_id = pa.attribute_id "
-                                      f"WHERE c.category_id = '{category_id}' AND pa.product_id = '{product_id}'")
-            print(attrs_ca)
+            categories_attrs = client.execute(
+                "SELECT ca.attribute_id, ca.attribute_name, ca.description, ca.required, "
+                "ca.dictionary_value, ca.data_type, ca.category_id FROM category_attrs AS ca "
+                f"WHERE ca.category_id = '{category_id}'")
+
+            products_attrs = client.execute(
+                "SELECT pa.attribute_id, pa.attribute_name, pa.value, pa.product_id FROM product_attr AS pa "
+                f"WHERE pa.product_id='{product_id}'")
+
+            print(len(categories_attrs), len(products_attrs))
     else:
         form = ParseForm()
     return render(request, 'parse.html', {'form': form})
